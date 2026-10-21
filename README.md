@@ -10,13 +10,68 @@ Measure how geopolitical conflict in the Middle East affects oil and gold prices
 ## Data Sources
 All data was aggregated into **weekly intervals** and merged into one dataset:
 
-| Source | Content |
-|---|---|
-| **ACLED** | Weekly conflict events (battles, explosions, strategic events), fatalities, and events per country |
-| **GDELT** | Global news volume, media sentiment, and geopolitical instability score (queried via Google BigQuery) |
-| **Yahoo Finance** | Brent, WTI, gold, USD index, S&P 500 (SPY), energy stocks (XLE), defense stocks (ITA), OVX, VIX |
-| **FRED / EIA** | Federal funds rate, US crude inventories, OPEC production |
+## Dataset
 
+**File:** `Merged.xlsx`
+**Granularity:** Weekly (one row per week, identified by `week_start`)
+**Period:** 2022 to 2026 <!-- adjust to the exact first and last week in your data -->
+**Size:** _ rows × _ columns <!-- fill from df.shape -->
+
+The dataset merges four sources into a single weekly table. Daily data was averaged per week so all sources share the same time unit.
+
+### Sources and Features
+
+**1. ACLED (conflict events)**
+| Feature | Description |
+|---|---|
+| `Fatalities` | Number of fatalities in the week |
+| `Battles_Events`, `Explosions_Events`, `Strategic_Events` | Weekly counts by conflict type |
+| `<Country>_Events` | Events recorded per country (Bahrain to Yemen) |
+
+**2. GDELT (global media)**
+| Feature | Description |
+|---|---|
+| `average_media_sentiment` | Average tone of news coverage |
+| `geopolitical_instability_score` | Calculated regional instability score |
+| `media_panic_amplification` | Media focus on crisis |
+| `kinetic_warfare`, `economic_coercion`, `diplomatic_threats` | Volume of each conflict type found in news |
+
+**3. Yahoo Finance (markets)**
+| Feature | Description |
+|---|---|
+| `target_brent_price` | Brent crude price (**main target**) |
+| `gold_price` | Gold price (**second target**) |
+| `usd_index` | U.S. Dollar index |
+| `sp500_etf` (SPY) | U.S. stock market |
+| `energy_stocks` (XLE) | Energy companies ETF |
+| `defense_stocks` (ITA) | Aerospace and defense ETF |
+| `oil_volatility` (OVX) | Expected 30-day oil volatility |
+| `market_volatility` (VIX) | Market fear index |
+
+**4. FRED / EIA (economy and supply)**
+| Feature | Description |
+|---|---|
+| `US_Crude_Inventories_mb` | U.S. crude inventories (million barrels) |
+
+### Preprocessing
+- Verified all date columns align within a 7-day window, then merged them into one `week_start` column.
+- Dropped redundant or weakly correlated features: `wti_price`, `Total_Events`, `total_geopolitical_event_volume`, `FEDFUNDS`, `OPEC_Production_mbpd`.
+- Combined related countries: Lebanon + Palestine + Jordan + Israel, and Turkey + Syria.
+
+### Engineered Features
+| Feature | Description |
+|---|---|
+| `War_Intensity` | Low / Medium / High, from K-Means (3 clusters) on conflict features |
+| `War_Intensity_Lag1` | Previous week's war intensity |
+| `Gold_Lag_1`, `Gold_Lag_2`, `Gold_Lag_4` | Gold price 1, 2, and 4 weeks earlier |
+| `Brent_Lag_1`, `Brent_Lag_2` | Brent price 1 and 2 weeks earlier |
+
+### Data Sources
+- ACLED: https://acleddata.com
+- GDELT (via Google BigQuery): https://www.gdeltproject.org
+- Yahoo Finance (via `yfinance`)
+- FRED: https://fred.stlouisfed.org
+- EIA: https://www.eia.gov
 ## Methodology
 1. **Data cleaning:** verified that dates from all sources align within a 7-day window, then merged them into a single `week_start` column.
 2. **Feature selection:** used a correlation heatmap to drop redundant features (e.g. WTI, Total_Events), and merged related countries' events (Lebanon, Palestine, Jordan, Israel; Turkey and Syria).
